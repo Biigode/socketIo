@@ -13,6 +13,8 @@ socket.on("message", (msg) => {
   console.log("Mensagem recebida: " + msg);
 });
 
+socket.emit('createRoom', 'nomeDaSala');
+
 socket.on("disconnect", () => {
   console.log("Desconectado do servidor");
 });
