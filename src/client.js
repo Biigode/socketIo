@@ -47,10 +47,9 @@ class ChatClient {
   }
 
   sendMessage() {
-    console.log(`Enviando mensagem para a sala ${this.createdRoom}`);
     this.socket.emit("sendMessage", {
       room: this.createdRoom,
-      message: "Olá, sala2!",
+      message: `Olá, sala sou o ${this.socket.id}!`,
     });
   }
 

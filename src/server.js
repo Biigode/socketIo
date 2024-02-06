@@ -40,7 +40,8 @@ class ChatServer {
   }
 
   handleSendMessage(socket, data) {
-    this.io.to(data.room).emit("message",{ room: data.room, message: data.message });
+    // this.io.to(data.room).emit("message",{ room: data.room, message: data.message });
+    socket.broadcast.to(data.room).emit("message",{ room: data.room, message: data.message });
   }
 
   handleListRooms(socket) {
