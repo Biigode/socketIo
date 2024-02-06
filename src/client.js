@@ -1,31 +1,63 @@
 import { io } from "socket.io-client";
 import { v4 as uuidv4 } from "uuid";
 
-const socket = io("http://localhost:3000");
+const MESSAGE_INTERVAL = 5000;
+const SERVER_URL = "http://localhost:3000";
 
-socket.on("connect", () => {
-  console.log("Conectado ao servidor");
-});
+class ChatClient {
+  constructor() {
+    this.socket = io(SERVER_URL);
+    this.createdRoom = "";
+    this.setupSocketHandlers();
+  }
 
-socket.on("message", (msg) => {
-  console.log("Mensagem recebida: " + JSON.stringify(msg));
-});
+  setupSocketHandlers() {
+    this.socket.on("connect", () => this.handleListRooms());
+    this.socket.on("roomsList", (rooms) => this.handleJoinRoom(rooms));
+    this.socket.on("message", (msg) => this.handleMessage(msg));
+    this.socket.on("roomCreated", (room) => this.handleRoomCreated(room));
+    this.socket.on("disconnect", () => this.handleDisconnect());
+  }
 
-const roomName = `sala-1-${uuidv4()}`;
+  handleListRooms() {
+    this.socket.emit("listRooms");
+  }
 
-socket.emit("createRoom", roomName);
+  handleJoinRoom(rooms) {
+    if (rooms.length === 0) {
+      console.log("Nenhuma sala encontrada, criando uma nova sala");
+      this.socket.emit("createRoom", `sala-1-${uuidv4()}`);
+    } else {
+      console.log(`Sala encontrada: ${rooms[0]}`);
+      this.socket.emit("joinRoom", rooms[0]);
+      this.createdRoom = rooms[0];
+      setInterval(() => this.sendMessage(), MESSAGE_INTERVAL);
+    }
+  }
 
-var createdRoom = "";
-socket.on("roomCreated", (room) => {
-  console.log(`Sala criada: ${room}`);
-  createdRoom = room;
-  socket.emit("joinRoom", room);
-  setInterval(() => {
-    console.log(`Enviando mensagem para a sala ${createdRoom}`);
-    socket.emit("sendMessage", { room: createdRoom, message: "Olá, sala!" });
-  }, 5000);
-});
+  handleMessage(msg) {
+    console.log("Mensagem recebida: " + JSON.stringify(msg));
+  }
 
-socket.on("disconnect", () => {
-  console.log("Desconectado do servidor");
-});
+  handleRoomCreated(room) {
+    console.log(`Sala criada: ${room}`);
+    this.createdRoom = room;
+    this.socket.emit("joinRoom", room);
+    setInterval(() => this.sendMessage(), MESSAGE_INTERVAL);
+  }
+
+  sendMessage() {
+    console.log(`Enviando mensagem para a sala ${this.createdRoom}`);
+    this.socket.emit("sendMessage", {
+      room: this.createdRoom,
+      message: "Olá, sala2!",
+    });
+  }
+
+  handleDisconnect() {
+    console.log("Desconectado do servidor");
+  }
+}
+
+// Uso
+new ChatClient();
